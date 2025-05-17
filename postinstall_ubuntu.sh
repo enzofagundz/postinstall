@@ -1,120 +1,116 @@
 #!/bin/bash
 
-# Verificar se este script já foi executado antes
-if [ -f "$HOME/.postinstall_completed" ]; then
-    echo "A instalação inicial já foi realizada."
-    # Parte 2 do script (executada após o login com fish shell)
-    echo "Continuando com a instalação de pacotes adicionais..."
-    
-    # Instalação de pacotes adicionais
-    sudo apt install php8.2 php8.2-{cli,common,xml,fpm,curl,mbstring,gd,zip,intl,bcmath,mysql} mariadb-server gnome-tweaks gpg pass -y
-    
-    # Configuração adicional aqui
-    echo "Configurando aplicativos..."
-    
-    # Limpeza
-    rm "$HOME/.postinstall_completed"
-    echo "Instalação completa!"
-    exit 0
-fi
-
-echo "Iniciando script de pós-instalação..."
-
 # Parte 1 do script
 echo "Atualizando repositórios e sistema..."
 sudo apt update && sudo apt upgrade -y
 
 echo "Adicionando repositório PPA para PHP..."
+sudo apt install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php -y
 
-echo "Instalando fish shell e git..."
-sudo apt install fish git -y
+echo "Iniciando script de pós-instalação..."
 
-# Configurar para continuar a execução após o login
-echo "Configurando para continuar após o reinício do shell..."
+echo "Instalando curl, wget, unzip e git..."
+sudo apt install git curl wget unzip -y
 
-# Criar arquivo de flag para indicar que parte 1 foi concluída
-touch "$HOME/.postinstall_completed"
+# Instalação de pacotes adicionais
+echo "Instalando PHP e pacotes relacionados..."
+sudo apt install php8.2 php8.2-{cli,common,xml,fpm,curl,mbstring,gd,zip,intl,bcmath,mysql} mariadb-server gnome-tweaks gpg pass wget curl unzip flatpak -y
 
-# Adicionar comando para executar este script novamente no login do fish
-SCRIPT_PATH=$(realpath "$0")
-FISH_CONFIG_DIR="$HOME/.config/fish"
+echo "Instalando aplicativos Flatpak..."
+# Instalar flatpak primeiro
+sudo apt install flatpak -y
+# Adicionar repositório flathub se não existir
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+# Instalar apps flatpak
+flatpak install flathub com.discordapp.Discord it.mijorus.gearlever net.hovancik.Stretchly io.github.shiftey.Desktop io.dbeaver.DBeaverCommunity com.mattjakeman.ExtensionManager com.github.marktext.marktext org.kde.krita com.rtosta.zapzap com.heroicgameslauncher.hgl app.zen_browser.zen md.obsidian.Obsidian io.ente.auth com.bitwarden.desktop -y || echo "Erro ao instalar flatpaks - continuando"
 
-mkdir -p "$FISH_CONFIG_DIR"
+echo "Baixando fontes..."
+# Instalar wget se não estiver instalado
+which wget >/dev/null || sudo apt install wget -y
+which unzip >/dev/null || sudo apt install unzip -y
 
-# Criar ou adicionar ao config.fish
-echo "
-# Executar automaticamente o script de pós-instalação na primeira vez
-if test -f \"$HOME/.postinstall_completed\"
-    bash \"$SCRIPT_PATH\"
-end" >> "$FISH_CONFIG_DIR/config.fish"
+mkdir -p ~/Downloads
+wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf -P ~/Downloads || echo "Erro ao baixar fonte - continuando"
+wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf -P ~/Downloads || echo "Erro ao baixar fonte - continuando"
+wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf -P ~/Downloads || echo "Erro ao baixar fonte - continuando"
+wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf -P ~/Downloads || echo "Erro ao baixar fonte - continuando"
+wget https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip -P ~/Downloads || echo "Erro ao baixar fonte - continuando"
+wget https://download.jetbrains.com/fonts/JetBrainsMono-2.304.zip -P ~/Downloads || echo "Erro ao baixar fonte - continuando"
 
-echo "Alterando o shell padrão para fish..."
-chsh -s $(which fish)
+unzip -o ~/Downloads/Fira_Code_v6.2.zip -d ~/Downloads || echo "Erro ao extrair fonte - continuando"
+unzip -o ~/Downloads/JetBrainsMono-2.304.zip -d ~/Downloads || echo "Erro ao extrair fonte - continuando"
 
-echo "O shell padrão foi alterado para fish."
-echo "Por favor, faça logout e login novamente para continuar a instalação."
-echo "A instalação continuará automaticamente após o login."
+echo "Criando diretórios..."
+mkdir -p ~/Projects
+mkdir -p ~/.icons
 
-# instalar apps flatpak
+echo "Instalando o bun..."
+which curl >/dev/null || sudo apt install curl -y
+curl -fsSL https://bun.sh/install | bash || echo "Erro ao instalar bun - continuando"
 
-sudo flatpak install flathub com.discordapp.Discord it.mijorus.gearlever net.hovancik.Stretchly io.github.shiftey.Desktop io.dbeaver.DBeaverCommunity com.mattjakeman.ExtensionManager com.github.marktext.marktext org.kde.krita com.rtosta.zapzap com.heroicgameslauncher.hgl app.zen_browser.zen md.obsidian.Obsidian io.ente.auth com.bitwarden.desktop -y
-
-# baixar fontes
-
-wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf -P ~/Downloads
-wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf -P ~/Downloads
-wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf -P ~/Downloads
-wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf -P ~/Downloads
-wget https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip -P ~/Downloads
-wget https://download.jetbrains.com/fonts/JetBrainsMono-2.304.zip -P ~/Downloads
-
-unzip ~/Downloads/Fira_Code_v6.2.zip -d ~/Downloads
-unzip ~/Downloads/JetBrainsMono-2.304.zip -d ~/Downloads
-
-mkdir ~/Projects
-mkdir ~/.icons
-
-# Instalando o bun
-curl -fsSL https://bun.sh/install | bash
-
-git config --global user.name ""
-git config --global user.email ""
+echo "Configurando git..."
+git config --global user.name "Enzo Fagundes"
+git config --global user.email "enzo.fagundes014@gmail.com"
 git config --global init.defaultBranch main
 git config --global pull.rebase false
 git config --global credential.credentialStore gpg
 
-# Instalando o fnm
-curl -fsSL https://fnm.vercel.app/install | bash
+echo "Instalando o fnm..."
+curl -fsSL https://fnm.vercel.app/install | bash || echo "Erro ao instalar fnm - continuando"
 
-# instalar o node 18
-fnm install 23
-fnm use 23
+# Carregar fnm para poder usar
+export PATH="$HOME/.local/share/fnm:$PATH"
+eval "$(fnm env)"
 
-# Instalando o starship
-curl -fsSL https://starship.rs/install.sh | sh
+echo "Instalando Node.js..."
+fnm install 23 || echo "Erro ao instalar node - continuando"
+fnm use 23 || echo "Erro ao usar node - continuando"
 
-# Instalando o composer
+echo "Instalando o starship..."
+curl -sS https://starship.rs/install.sh | sh || echo "Erro ao instalar starship - continuando"
 
-php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-php composer-setup.php
-php -r "unlink('composer-setup.php');"
-sudo mv composer.phar /usr/local/bin/composer
+# Adicionar starship ao fish
+echo "starship init fish | source" >> ~/.config/fish/config.fish
 
-# Ativando o mariadb
+starship preset bracketed-segments -o ~/.config/starship.toml
 
-sudo systemctl enable mariadb
-sudo systemctl start mariadb
+echo "Instalando o composer..."
+which php >/dev/null || sudo apt install php -y
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" || echo "Erro ao baixar composer - continuando"
+php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" || echo "Erro ao verificar composer - continuando"
+php composer-setup.php || echo "Erro ao instalar composer - continuando"
+php -r "unlink('composer-setup.php');" || echo "Erro ao remover setup - continuando"
+sudo mv composer.phar /usr/local/bin/composer || echo "Erro ao mover composer - continuando"
 
-# Download do yt music
+echo "Configurando mariadb..."
+# Verificar se estamos em um sistema com systemd
+if [ -d "/run/systemd/system" ]; then
+    sudo systemctl enable mariadb || echo "Erro ao habilitar mariadb - continuando"
+    sudo systemctl start mariadb || echo "Erro ao iniciar mariadb - continuando"
+else
+    echo "Systemd não detectado - pulando configuração do MariaDB"
+fi
 
-wget https://github.com/th-ch/youtube-music/releases/download/v3.9.0/YouTube-Music-3.9.0.AppImage -P ~/Downloads
+echo "Baixando aplicativos adicionais..."
+wget https://github.com/th-ch/youtube-music/releases/download/v3.9.0/YouTube-Music-3.9.0.AppImage -P ~/Downloads || echo "Erro ao baixar YouTube Music - continuando"
 
-# Download do gnome-dash-fixer
+echo "Baixando o vscode..."
+wget https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64 -O vscode.deb || echo "Erro ao baixar vscode - continuando"
+sudo apt install ./vscode.deb -y || echo "Erro ao instalar vscode - continuando"
 
-wget https://github.com/BenJetson/gnome-dash-fix/archive/refs/heads/master.zip -P ~/Documents
-unzip ~/Documents/master.zip -d ~/Documents
-cd ~/Documents/gnome-dash-fix-master
-chmod +x interactive.py
-./interactive.py
+echo "Baixando gnome-dash-fixer..."
+mkdir -p ~/Documents
+wget https://github.com/BenJetson/gnome-dash-fix/archive/refs/heads/master.zip -P ~/Documents || echo "Erro ao baixar gnome-dash-fix - continuando"
+unzip -o ~/Documents/master.zip -d ~/Documents || echo "Erro ao extrair gnome-dash-fix - continuando"
+if [ -d ~/Documents/gnome-dash-fix-master ]; then
+    cd ~/Documents/gnome-dash-fix-master
+    chmod +x interactive.py
+    ./interactive.py || echo "Erro ao executar gnome-dash-fix - continuando"
+else
+    echo "Diretório gnome-dash-fix-master não encontrado - pulando"
+fi
+
+# Limpeza
+echo "Instalação completa!"
+exit 0
