@@ -50,8 +50,8 @@ which curl >/dev/null || sudo apt install curl -y
 curl -fsSL https://bun.sh/install | bash || echo "Erro ao instalar bun - continuando"
 
 echo "Configurando git..."
-git config --global user.name "Enzo Fagundes"
-git config --global user.email "enzo.fagundes014@gmail.com"
+git config --global user.name ""
+git config --global user.email ""
 git config --global init.defaultBranch main
 git config --global pull.rebase false
 git config --global credential.credentialStore gpg
